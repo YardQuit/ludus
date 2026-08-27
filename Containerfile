@@ -69,7 +69,7 @@ COPY build_files /
 ## from it". AlmaLinux and Rocky are the RHEL-compatible route with none of
 ## that: free to pull, free to publish.
 
-FROM quay.io/fedora-ostree-desktops/silverblue:44
+FROM quay.io/fedora/fedora-bootc:44
 
 ## The repository this image gets published to, passed in by the workflow.
 ## build.sh section 9c checks the scope of the signature policy it writes

@@ -938,7 +938,7 @@ systemctl mask systemd-remount-fs.service
 ## Each field follows the convention it already uses:
 ##   VARIANT / VARIANT_ID   the edition on top of the distribution, so
 ##                          "COSMIC Atomic" / cosmic-atomic becomes
-##                          "MYIMAGE Atomic" / myimage-atomic
+##                          "LUDUS Atomic" / ludus-atomic
 ##   VERSION / PRETTY_NAME  carry that same label while keeping the base's build
 ##                          number, so the version follows the base forward on
 ##                          its own rather than being hardcoded here
@@ -987,16 +987,16 @@ OS_BUILD="$(. "${OS_RELEASE}"; printf '%s' "${VERSION:-}")"
 OS_BUILD="${OS_BUILD%% *}"
 [ -n "${OS_BUILD}" ] || OS_BUILD="$(. "${OS_RELEASE}"; printf '%s' "${VERSION_ID:-}")"
 
-os_release_set VARIANT           "\"MYIMAGE Atomic\""
-os_release_set VARIANT_ID        "myimage-atomic"
-os_release_set VERSION           "\"${OS_BUILD} (MYIMAGE Atomic)\""
-os_release_set PRETTY_NAME       "\"${OS_NAME} ${OS_BUILD} (MYIMAGE Atomic)\""
-os_release_set DEFAULT_HOSTNAME  "\"myimage\""
-os_release_set HOME_URL          "\"https://github.com/myorg/myimage\""
-os_release_set DOCUMENTATION_URL "\"https://github.com/myorg/myimage\""
-os_release_set SUPPORT_URL       "\"https://github.com/myorg/myimage/issues\""
-os_release_set BUG_REPORT_URL    "\"https://github.com/myorg/myimage/issues\""
-os_release_set IMAGE_ID          "myimage"
+os_release_set VARIANT           "\"LUDUS Atomic\""
+os_release_set VARIANT_ID        "ludus-atomic"
+os_release_set VERSION           "\"${OS_BUILD} (LUDUS Atomic)\""
+os_release_set PRETTY_NAME       "\"${OS_NAME} ${OS_BUILD} (LUDUS Atomic)\""
+os_release_set DEFAULT_HOSTNAME  "\"ludus\""
+os_release_set HOME_URL          "\"https://github.com/myorg/ludus\""
+os_release_set DOCUMENTATION_URL "\"https://github.com/myorg/ludus\""
+os_release_set SUPPORT_URL       "\"https://github.com/myorg/ludus/issues\""
+os_release_set BUG_REPORT_URL    "\"https://github.com/myorg/ludus/issues\""
+os_release_set IMAGE_ID          "ludus"
 os_release_set IMAGE_VERSION     "\"${OS_BUILD}\""
 
 ## On a Fedora base, abrt uses these to file crashes against Fedora's Bugzilla.
@@ -1012,10 +1012,10 @@ sed -i '/^REDHAT_BUGZILLA_PRODUCT=/d
 ## matched nothing is the failure mode this whole section is built to avoid.
 
 ( . "${OS_RELEASE}"
-  [ "${VARIANT_ID:-}" = "myimage-atomic" ] || { echo "os-release: VARIANT_ID not applied" >&2; exit 1; }
-  [ "${IMAGE_ID:-}" = "myimage" ]          || { echo "os-release: IMAGE_ID not applied" >&2; exit 1; }
+  [ "${VARIANT_ID:-}" = "ludus-atomic" ] || { echo "os-release: VARIANT_ID not applied" >&2; exit 1; }
+  [ "${IMAGE_ID:-}" = "ludus" ]          || { echo "os-release: IMAGE_ID not applied" >&2; exit 1; }
   case "${PRETTY_NAME:-}" in
-      *"MYIMAGE Atomic"*) ;;
+      *"LUDUS Atomic"*) ;;
       *) echo "os-release: PRETTY_NAME not applied" >&2; exit 1 ;;
   esac )
 
@@ -1170,7 +1170,7 @@ fi
 ## current, and "set-image-name.sh --check" - run by build.yml before
 ## anything else - fails the build if it is ever left stale.
 
-POLICY_SCOPE="${IMAGE_REPO:-ghcr.io/myorg/myimage}"
+POLICY_SCOPE="${IMAGE_REPO:-ghcr.io/myorg/ludus}"
 
 ## The key filename deliberately carries no project name. Nothing outside
 ## this section reads the path, so naming it after the image would only add

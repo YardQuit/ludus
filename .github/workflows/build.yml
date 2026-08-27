@@ -46,7 +46,7 @@ env:
   # and "set-image-name.sh --check" - which both workflows run before they
   # build - would read the expression itself as the current name and fail on
   # every run.
-  IMAGE_NAME: "myimage"
+  IMAGE_NAME: "ludus"
   IMAGE_DESC: "My personal bootable container image"
   # Lowercased in the build step - ghcr.io rejects uppercase names.
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"

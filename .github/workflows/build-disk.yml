@@ -36,7 +36,7 @@ on:
 env:
   # Must match IMAGE_NAME in build.yml. scripts/set-image-name.sh rewrites both,
   # and the ISO is named after it, so renaming the image renames the ISO too.
-  IMAGE_NAME: "myimage"
+  IMAGE_NAME: "ludus"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
   BUILDER_IMAGE: "quay.io/centos-bootc/bootc-image-builder:latest"
 
@@ -168,8 +168,8 @@ jobs:
             exit 1
           fi
 
-          # e.g. Fedora-MYIMAGE-Atomic-44.20260819.0.iso
-          #      CentOS-MYIMAGE-Atomic-10.iso
+          # e.g. Fedora-LUDUS-Atomic-44.20260819.0.iso
+          #      CentOS-LUDUS-Atomic-10.iso
           #
           # "Atomic" stays fixed on purpose: it describes how the system is
           # updated - the whole image is replaced and you reboot into it, with
@@ -212,8 +212,8 @@ jobs:
           # It travels to S3 with everything else in output/, so give it the
           # ISO's name too: several projects uploading into the same bucket
           # would otherwise each write "manifest-iso.json" and overwrite one
-          # another's. Fedora-MYIMAGE-Atomic-44….iso gets
-          # Fedora-MYIMAGE-Atomic-44….manifest-iso.json alongside it.
+          # another's. Fedora-LUDUS-Atomic-44….iso gets
+          # Fedora-LUDUS-Atomic-44….manifest-iso.json alongside it.
           for manifest in output/manifest-*.json; do
             [ -f "${manifest}" ] || continue
             mv "${manifest}" "output/${ISO_NAME%.iso}.$(basename "${manifest}")"

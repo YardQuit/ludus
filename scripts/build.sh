@@ -3,12 +3,12 @@
 # Build the container image on your own machine, exactly like CI does.
 #
 # Usage:
-#   ./scripts/build.sh                 # builds localhost/myimage:latest
-#   ./scripts/build.sh myimage v2      # builds localhost/myimage:v2
+#   ./scripts/build.sh                 # builds localhost/ludus:latest
+#   ./scripts/build.sh ludus v2      # builds localhost/ludus:v2
 #   NO_CACHE=1 ./scripts/build.sh      # ignore cached layers
 set -euo pipefail
 
-IMAGE_NAME="${1:-myimage}"
+IMAGE_NAME="${1:-ludus}"
 TAG="${2:-latest}"
 
 # Run from the repository root no matter where the script is called from.

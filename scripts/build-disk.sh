@@ -4,9 +4,9 @@
 # Needs podman and sudo; the builder must run privileged.
 #
 # Usage:
-#   ./scripts/build-disk.sh                    # ISO from localhost/myimage:latest
+#   ./scripts/build-disk.sh                    # ISO from localhost/ludus:latest
 #   ./scripts/build-disk.sh qcow2              # VM disk instead
-#   ./scripts/build-disk.sh iso myimage v2     # a specific image and tag
+#   ./scripts/build-disk.sh iso ludus v2     # a specific image and tag
 #   ./scripts/build-disk.sh --check qcow2      # check the config, build nothing
 #
 # The tag picks which local image goes onto the ISO. What the installed machine
@@ -31,7 +31,7 @@ if [ "${1:-}" = "--check" ]; then
 fi
 
 DISK_TYPE="${1:-iso}"     # iso | qcow2 | raw
-IMAGE_NAME="${2:-myimage}"
+IMAGE_NAME="${2:-ludus}"
 TAG="${3:-latest}"
 
 BUILDER_IMAGE="quay.io/centos-bootc/bootc-image-builder:latest"

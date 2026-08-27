@@ -10,5 +10,5 @@
 # containers/image reads this from /etc/containers/registries.d only; there is
 # no /usr location for it, so it belongs in sysfiles under etc/.
 docker:
-    ghcr.io/myorg/myimage:
+    ghcr.io/myorg/ludus:
         use-sigstore-attachments: true
