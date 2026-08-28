@@ -992,10 +992,10 @@ os_release_set VARIANT_ID        "ludus-atomic"
 os_release_set VERSION           "\"${OS_BUILD} (LUDUS Atomic)\""
 os_release_set PRETTY_NAME       "\"${OS_NAME} ${OS_BUILD} (LUDUS Atomic)\""
 os_release_set DEFAULT_HOSTNAME  "\"ludus\""
-os_release_set HOME_URL          "\"https://github.com/myorg/ludus\""
-os_release_set DOCUMENTATION_URL "\"https://github.com/myorg/ludus\""
-os_release_set SUPPORT_URL       "\"https://github.com/myorg/ludus/issues\""
-os_release_set BUG_REPORT_URL    "\"https://github.com/myorg/ludus/issues\""
+os_release_set HOME_URL          "\"https://github.com/yardquit/ludus\""
+os_release_set DOCUMENTATION_URL "\"https://github.com/yardquit/ludus\""
+os_release_set SUPPORT_URL       "\"https://github.com/yardquit/ludus/issues\""
+os_release_set BUG_REPORT_URL    "\"https://github.com/yardquit/ludus/issues\""
 os_release_set IMAGE_ID          "ludus"
 os_release_set IMAGE_VERSION     "\"${OS_BUILD}\""
 
@@ -1170,7 +1170,7 @@ fi
 ## current, and "set-image-name.sh --check" - run by build.yml before
 ## anything else - fails the build if it is ever left stale.
 
-POLICY_SCOPE="${IMAGE_REPO:-ghcr.io/myorg/ludus}"
+POLICY_SCOPE="${IMAGE_REPO:-ghcr.io/yardquit/ludus}"
 
 ## The key filename deliberately carries no project name. Nothing outside
 ## this section reads the path, so naming it after the image would only add
