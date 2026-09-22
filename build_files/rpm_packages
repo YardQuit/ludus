@@ -32,6 +32,8 @@ tmux
 wireguard-tools
 wl-clipboard
 zoxide
+kitty
+chromium
 
 # Uncomment what you need.
 # cargo
