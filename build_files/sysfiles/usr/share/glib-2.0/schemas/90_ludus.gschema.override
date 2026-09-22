@@ -1,0 +1,11 @@
+# Dark mode by default for GTK and libadwaita apps (and anything else that
+# reads the freedesktop colour-scheme setting through the portal), to sit
+# with the ao-dark desktop. Compiled by build.sh section 4a; an account can
+# still change it with gsettings.
+
+[org.gnome.desktop.interface]
+color-scheme='prefer-dark'
+gtk-theme='Adwaita-dark'
+icon-theme='Adwaita'
+font-name='Noto Sans 11'
+monospace-font-name='JetBrainsMono Nerd Font 11'

@@ -4,12 +4,47 @@
 ##   1. "ctx" holds the build scripts and package lists, so they are available
 ##      during the build but never end up inside the finished image.
 ##   2. The real image: your base image + whatever build.sh does to it.
+##
+## Plus one build stage in between, "share-picker", which compiles a program
+## no repository packages and hands stage 2 the binary alone.
 
 ## Stage 1: build context. FROM scratch means "empty image" - it only carries files.
 FROM scratch AS ctx
 COPY build_files /
 ## build_files/ carries the signing public key too (build_files/cosign.pub,
 ## installed by build.sh section 9c) - it needs no line of its own here.
+
+## Build stage: hyprland-preview-share-picker, the screen-share picker
+## xdg-desktop-portal-hyprland opens (build.sh section 4a installs it).
+##
+## Nobody packages it for Fedora - not Fedora, not the sdegler/hyprland COPR -
+## and upstream publishes no binaries, so it is compiled here from source.
+## A stage of its own keeps the Rust toolchain and the -devel packages out of
+## the image: only the finished binary crosses over, through a bind mount in
+## the RUN below.
+##
+## Pinned to a commit on master and fetched by that hash, so a moved branch
+## cannot change what gets built; --locked holds every crate to the checksum
+## in upstream's Cargo.lock. There are release tags, but the last (v0.2.1) is
+## from April 2025 and master has moved on a long way since. To update:
+##
+##   git ls-remote https://github.com/WhySoBad/hyprland-preview-share-picker master
+##
+## The Fedora release has to match the FROM line of the image below: the
+## binary links against that release's GTK 4 and gtk4-layer-shell.
+FROM quay.io/fedora/fedora:44 AS share-picker
+## master as of 2026-08-24.
+ARG SHARE_PICKER_COMMIT=0ef9b302aee716f36ea19e33ff3cc457d8c075a8
+## A full clone rather than a shallow one: build.rs runs "git describe --tags"
+## for the version string and panics when it finds no tag.
+RUN dnf -y install cargo gcc git-core pkgconf-pkg-config gtk4-devel gtk4-layer-shell-devel \
+ && git clone https://github.com/WhySoBad/hyprland-preview-share-picker /src \
+ && cd /src \
+ && git -c advice.detachedHead=false checkout "${SHARE_PICKER_COMMIT}" \
+ && git submodule update --init --recursive \
+ && cargo build --locked --release \
+ && install -Dm0755 target/release/hyprland-preview-share-picker /out/hyprland-preview-share-picker \
+ && /out/hyprland-preview-share-picker schema > /out/schema.json
 
 ## Stage 2: the image itself.
 ##
@@ -83,7 +118,9 @@ ARG IMAGE_REPO=""
 ##                               without copying them into a layer
 ##   --mount=type=cache          keeps dnf's cache and logs out of the image
 ##   --mount=type=tmpfs,dst=/tmp gives the build a scratch dir that is discarded
+##   --mount=...share-picker     the compiled share picker, for section 4a
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=bind,from=share-picker,source=/out,target=/share-picker \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \

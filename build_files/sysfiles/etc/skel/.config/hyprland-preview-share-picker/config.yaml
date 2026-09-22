@@ -1,0 +1,23 @@
+# ~/.config/hyprland-preview-share-picker/config.yaml - the screen-share
+# picker xdg-desktop-portal-hyprland opens. Omarchy's settings (outputs
+# first, one click to pick, no restore checkbox) with an ao-dark stylesheet.
+# Every option, with its default, is in the upstream README:
+# https://github.com/WhySoBad/hyprland-preview-share-picker#configuration
+
+stylesheets: ["style.css"]
+default_page: outputs
+
+image:
+  resize_size: 500
+  widget_size: 150
+
+windows:
+  clicks: 1
+
+outputs:
+  clicks: 1
+
+region:
+  command: slurp -f '%o@%x,%y,%w,%h'
+
+hide_token_restore: true

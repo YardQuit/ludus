@@ -1,0 +1,18 @@
+# ~/.config/mako/config - notifications, in the ao-dark palette.
+
+font=JetBrainsMono Nerd Font 11
+background-color=#080d15
+text-color=#dadada
+border-color=#ff9000
+progress-color=over #2c5484
+border-size=2
+border-radius=2
+padding=10
+margin=10
+width=420
+default-timeout=5000
+anchor=top-right
+
+[urgency=critical]
+border-color=#fa7970
+default-timeout=0

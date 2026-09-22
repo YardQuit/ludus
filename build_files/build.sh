@@ -571,6 +571,154 @@ rm -f /etc/skel/.emacs
 
 
 #############################################################################
+## 4a. Hyprland, the Omarchy way
+#############################################################################
+##
+## A Hyprland desktop assembled after Omarchy: its Hyprland package set,
+## SDDM on Wayland as the login screen, hyprlock and hypridle for locking, and
+## Waybar in Omarchy's v3 layout - keyed like COSMIC and coloured ao-dark
+## throughout. This section installs it; what each account starts with lives
+## in build_files/sysfiles/etc/skel/.config (hypr, waybar, kitty, mako,
+## hyprland-preview-share-picker), and the login screen in
+## build_files/sysfiles/usr/share/sddm and usr/lib/sddm.
+##
+## Fedora retired its own hyprland package - it failed to install, and its
+## last build was 0.45.2, a dozen releases back (releng#12969) - so Hyprland
+## and its tools come from the sdegler/hyprland COPR. One person's repository
+## rather than an official one, but the one Fedora's community points to, and
+## it follows upstream releases within days.
+##
+## Its signing key is pinned by fingerprint. "copr enable" writes the key's
+## URL into the repo file, and dnf imports whatever that URL serves the first
+## time a package needs it, with -y agreeing on the build's behalf - trust on
+## first use, on every build. So the key is imported here first and asked for
+## by fingerprint, which stops the build on the "rpm -q" line if anything
+## else was served. The install then runs with the repo's gpgkey emptied: a
+## package signed by some other key fails its signature check, rather than
+## dnf fetching that key and trusting it by itself.
+##
+## COPR extends a key before it expires, and an extension keeps the
+## fingerprint. A different fingerprint is a different key - worth finding
+## out why before putting it here:
+##
+##   curl -fsSL https://download.copr.fedorainfracloud.org/results/sdegler/hyprland/pubkey.gpg \
+##       | gpg --show-keys --with-colons | awk -F: '$1 == "fpr" {print tolower($10); exit}'
+##
+## "dnf copr" comes from dnf5-plugins, which rpm_packages installs in section 3.
+## The COPR builds for each Fedora release, so a new base release works once
+## the COPR has built for it - usually before the release is out.
+##
+## The first half of the list is from the COPR, the rest from Fedora:
+##
+##   hyprland ... hyprsunset   Omarchy v4's Hyprland packages, plus the uwsm
+##                             session its login screen picks
+##   hyprlauncher              Hyprland's own launcher (Super, Super+A, Super+/)
+##   hyprpolkitagent           the password prompt for privileged actions
+##   hyprshutdown              log out without killing apps mid-write
+##   hyprlock hypridle         the lock screen and what triggers it
+##   waybar                    the bar
+##   xdg-desktop-portal-*      screen sharing and file pickers (hyprland), and
+##                             the dark-mode setting and the rest (gtk)
+##   mako                      notifications
+##   kitty                     the terminal (Super+T)
+##   wiremix                   the volume mixer the bar's speaker opens
+##   grim slurp                screenshots (Print), and the share picker's
+##                             region mode
+##   brightnessctl playerctl   the brightness and media keys
+##   gtk4-layer-shell          the share picker's one library GTK lacks
+##   pipewire ... bluez        sound, Wi-Fi and Bluetooth: a server base like
+##                             fedora-bootc has none of them
+##   google-noto-*, adwaita-*  a sans-serif and an emoji font, and icons
+##   sddm                      the login screen
+
+# --- Hyprland desktop from the sdegler/hyprland COPR, with SDDM
+# --------------------------------------------------------------------------
+HYPR_COPR_KEY="64bbbf013d1ca5e4be5b0552c043104207862204"
+HYPR_COPR_REPO="copr:copr.fedorainfracloud.org:sdegler:hyprland"
+
+curl -fsSL --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 \
+    -o /tmp/sdegler-hyprland.gpg \
+    https://download.copr.fedorainfracloud.org/results/sdegler/hyprland/pubkey.gpg
+rpm --import /tmp/sdegler-hyprland.gpg
+rpm -q "gpg-pubkey-${HYPR_COPR_KEY}"
+
+dnf -y copr enable sdegler/hyprland
+pkg_install \
+    --setopt="${HYPR_COPR_REPO}.skip_if_unavailable=0" \
+    --setopt="${HYPR_COPR_REPO}.gpgkey=" \
+    hyprland hyprland-uwsm uwsm hyprland-guiutils hyprpicker hyprsunset \
+    hyprlauncher hyprpolkitagent hyprshutdown hyprlock hypridle waybar \
+    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk \
+    mako kitty wiremix grim slurp brightnessctl playerctl gtk4-layer-shell \
+    pipewire wireplumber pipewire-pulseaudio NetworkManager-wifi bluez \
+    google-noto-sans-fonts google-noto-color-emoji-fonts adwaita-icon-theme \
+    sddm
+dnf -y copr disable sdegler/hyprland
+
+## sddm's install leaves /run/sddm in the image, which "bootc container lint"
+## flags as content in a runtime-only directory. Its tmpfiles.d rule
+## creates it at every boot, so the build's copy has no job.
+rm -rf /run/sddm
+
+## Boot to the login screen. fedora-bootc already defaults to
+## graphical.target; saying so keeps that true whatever the base does.
+systemctl enable sddm.service
+systemctl enable bluetooth.service
+systemctl set-default graphical.target
+
+## Dark mode for GTK and libadwaita apps, through the schema default rather
+## than per-account settings: build_files/sysfiles ships the override, and
+## compiling it here is what makes it take effect.
+glib-compile-schemas /usr/share/glib-2.0/schemas
+# --------------------------------------------------------------------------
+
+## The share picker has no package anywhere; the Containerfile's
+## share-picker stage compiles it and mounts the result at /share-picker.
+## ldd confirms each library it was linked against is in the image, so a
+## release mismatch between that stage and this base fails here rather than
+## on the first screen share.
+
+# --- hyprland-preview-share-picker, compiled in the Containerfile
+# --------------------------------------------------------------------------
+install -Dm0755 /share-picker/hyprland-preview-share-picker /usr/bin/hyprland-preview-share-picker
+install -Dm0644 /share-picker/schema.json /usr/share/hyprland-preview-share-picker/schema.json
+if ldd /usr/bin/hyprland-preview-share-picker | grep 'not found'; then
+    echo "hyprland-preview-share-picker: libraries missing from the image" >&2
+    exit 1
+fi
+# --------------------------------------------------------------------------
+
+## JetBrainsMono Nerd Font: JetBrains Mono with the icon glyphs the bar,
+## the lock screen and the login screen draw with. Fedora packages JetBrains
+## Mono (rpm_packages has it) but not the Nerd Font build. Only the four
+## regular weights are kept out of the 92 in the archive - about 10 MB
+## rather than 90.
+##
+## Pinned to a release and checked against its hash, like section 1a. To
+## update, pick the release and hash the archive:
+##
+##   curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/download/<tag>/JetBrainsMono.tar.xz | sha256sum
+
+# --- JetBrainsMono Nerd Font from the nerd-fonts release
+# --------------------------------------------------------------------------
+NERD_FONTS_VERSION="v3.5.1"
+NERD_FONTS_SHA256="04d5e8f903693f9dd13e16f867e994834e681eb3c72c0d337a770dcda09010cf"
+
+curl -fL --retry 3 --retry-all-errors --connect-timeout 15 \
+    --speed-limit 1 --speed-time 30 --max-time 300 --retry-max-time 600 \
+    -o /tmp/JetBrainsMono.tar.xz \
+    "https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONTS_VERSION}/JetBrainsMono.tar.xz"
+echo "${NERD_FONTS_SHA256}  /tmp/JetBrainsMono.tar.xz" | sha256sum -c -
+
+install -d -m 0755 /usr/share/fonts/jetbrains-mono-nerd
+tar -xJf /tmp/JetBrainsMono.tar.xz --no-same-owner -C /usr/share/fonts/jetbrains-mono-nerd \
+    JetBrainsMonoNerdFont-Regular.ttf JetBrainsMonoNerdFont-Bold.ttf \
+    JetBrainsMonoNerdFont-Italic.ttf JetBrainsMonoNerdFont-BoldItalic.ttf
+chmod 0644 /usr/share/fonts/jetbrains-mono-nerd/*.ttf
+fc-cache -f /usr/share/fonts/jetbrains-mono-nerd
+# --------------------------------------------------------------------------
+
+#############################################################################
 ## 5. Optional: RPMs from a URL
 #############################################################################
 ##

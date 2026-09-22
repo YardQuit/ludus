@@ -1,0 +1,89 @@
+/* ~/.config/waybar/style.css - Omarchy's v3 bar style in the ao-dark
+ * palette. Omarchy is MIT-licensed; its notice is at /usr/share/licenses/ludus/Omarchy-LICENSE. */
+
+@define-color background #080d15; /* deep-abyss */
+@define-color foreground #dadada; /* ao-white */
+@define-color accent     #ff9000; /* blaze-orange */
+@define-color alert      #fa7970; /* ruby-glow */
+
+* {
+  background-color: @background;
+  color: @foreground;
+
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  font-family: 'JetBrainsMono Nerd Font';
+  font-size: 12px;
+}
+
+.modules-left {
+  margin-left: 8px;
+}
+
+.modules-right {
+  margin-right: 8px;
+}
+
+#workspaces button {
+  all: initial;
+  padding: 0 6px;
+  margin: 0 1.5px;
+  min-width: 9px;
+}
+
+#workspaces button.active {
+  color: @accent;
+}
+
+#workspaces button.empty {
+  opacity: 0.5;
+}
+
+#cpu,
+#battery,
+#pulseaudio,
+#custom-launcher {
+  min-width: 12px;
+  margin: 0 7.5px;
+}
+
+#custom-launcher {
+  color: @accent;
+}
+
+#tray {
+  margin-right: 16px;
+}
+
+#bluetooth {
+  margin-right: 17px;
+}
+
+#network {
+  margin-right: 13px;
+}
+
+#custom-expand-icon {
+  margin-right: 18px;
+}
+
+tooltip {
+  padding: 2px;
+}
+
+#clock {
+  margin-left: 8.75px;
+}
+
+#battery.warning {
+  color: @accent;
+}
+
+#battery.critical {
+  color: @alert;
+}
+
+.hidden {
+  opacity: 0;
+}

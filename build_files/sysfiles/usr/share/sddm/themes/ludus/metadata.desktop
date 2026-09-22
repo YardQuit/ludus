@@ -1,0 +1,9 @@
+[SddmGreeterTheme]
+Name=Ludus
+Description=Minimal login theme in the ao-dark palette, after Omarchy's
+Author=Ludus
+Type=sddm-theme
+Version=1.0
+QtVersion=6
+MainScript=Main.qml
+ConfigFile=theme.conf
