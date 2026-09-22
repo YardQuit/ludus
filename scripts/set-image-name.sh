@@ -367,7 +367,9 @@ fi
 # substitutions cannot tell the image apart from the Donkey Emacs package
 # paths in build.sh, and would rewrite both - consistently enough that the
 # build still passes while config.el's donkey/donkey.el load path silently
-# breaks. Stop rather than guess.
+# breaks. Stop rather than guess. (The same would hold for "ao" and
+# "garamond", the other two Emacs packages section 1a fetches; the collision
+# check below refuses those as new values for the same reason.)
 if [ "${OLD_NAME,,}" = "donkey" ] || [ "${OLD_OWNER,,}" = "donkey" ]; then
     echo "Error: the current image name or owner is 'donkey', which cannot be" >&2
     echo "told apart from the Donkey Emacs package references in" >&2
@@ -409,8 +411,9 @@ if [ -n "${OLD_OWNER}" ] && overlaps "${NAME_LOWER}" "${OLD_OWNER}"; then
 fi
 
 # Upstream repositories that appear in this template by name rather than as
-# image references: Donkey's donkey.el fetch in section 1 of build.sh and the
-# README's links to it, and the CSVDT release RPM in section 5's example. The
+# image references: the Donkey, Ao and Garamond fetches in section 1a of
+# build.sh and the README's links to them, and the CSVDT release RPM in
+# section 5's example. The
 # collision scan below and the substitution guard further down both derive
 # from this one list, so they cannot drift apart: lines matching any entry are
 # never rewritten, and therefore never count as collisions either.
@@ -419,7 +422,7 @@ fi
 # these URLs and the fetch 404s. Without the scan skipping them, an owner that
 # happens to match one - "yardquit" does, and it is this template's own owner -
 # is refused outright, so the project cannot be renamed at all.
-UPSTREAM_URLS=('yardquit/donkey' 'yardquit/csvdt')
+UPSTREAM_URLS=('yardquit/donkey' 'yardquit/ao' 'yardquit/garamond' 'yardquit/csvdt')
 
 # The same list as grep arguments, built once so every scan below uses it.
 UPSTREAM_GREP=()

@@ -16,9 +16,12 @@
 ;;               Customize save into the init file, keeping its
 ;;               machine-written forms out of config.el.
 ;;   config.el - your configuration. Edit that, not this.
-;;   donkey/   - the donkey package (donkey/donkey.el, where its README
-;;               expects it), fetched into /etc/skel by build.sh at image
-;;               build time; loaded and enabled from config.el.
+;;   donkey/   - the Donkey package (donkey/donkey.el), fetched into
+;;   ao/         /etc/skel by build.sh at image build time, together with
+;;   garamond/   the Ao theme (ao/ao-theme.el and the two ao-*-theme.el
+;;               variants) and Garamond (garamond/garamond.el). config.el
+;;               byte-compiles each on first use, loads it and turns it
+;;               on; the .elc files land beside the sources.
 
 (let ((config (expand-file-name "config.el" user-emacs-directory)))
   (when (file-exists-p config)

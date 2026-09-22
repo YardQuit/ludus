@@ -269,12 +269,13 @@ echo
 echo "Refusals"
 T="$(tree refuse)"
 before="$(fingerprint "${T}")"
-# These two are refused because they occur in build_files/build.sh, in the
-# Donkey Emacs package paths. A project built from this template is told to
-# delete that section; with it goes the collision, and there is then nothing to
-# refuse and nothing to assert. Judged on the file rather than assumed - the
-# same reasoning as the README cases further up.
-for word in donkey emacs; do
+# These are refused because they occur in build_files/build.sh, in the paths
+# of the Emacs packages section 1a fetches (Donkey, Ao, Garamond). A project
+# built from this template is told to delete that section; with it goes the
+# collision, and there is then nothing to refuse and nothing to assert. Judged
+# on the file rather than assumed - the same reasoning as the README cases
+# further up.
+for word in donkey ao garamond emacs; do
     if grep -q -i -w -F -e "${word}" "${T}/build_files/build.sh"; then
         check "'${word}' is refused"          "$(run "${T}" "${word}")"          "1"
     else
@@ -289,9 +290,10 @@ check "nothing was written"               "$(fingerprint "${T}")" "${before}"
 
 echo
 echo "Upstream URLs"
-# build.sh fetches Donkey from yardquit/donkey and section 5's example installs
-# a CSVDT release RPM from yardquit/csvdt. Neither is an image reference, so
-# both must survive a rename - and, less obviously, neither may block one: the
+# build.sh fetches Donkey, Ao and Garamond from yardquit/donkey, yardquit/ao
+# and yardquit/garamond, and section 5's example installs a CSVDT release RPM
+# from yardquit/csvdt. None is an image reference, so all must survive a
+# rename - and, less obviously, none may block one: the
 # owner in them is this template's own, so a project belonging to that owner
 # has to be able to rename to it at all. That combination was broken once, and
 # the symptom was a first build failing in section 9c on a signature scope
@@ -299,10 +301,10 @@ echo "Upstream URLs"
 # itself refused.
 #
 # Read out of the file rather than hard-coded: a project told to delete the
-# Donkey section, or the CSVDT example, still has to pass here.
+# Emacs packages section, or the CSVDT example, still has to pass here.
 T="$(tree upstream)"
 upstreams=()
-for url in yardquit/donkey yardquit/csvdt; do
+for url in yardquit/donkey yardquit/ao yardquit/garamond yardquit/csvdt; do
     if grep -q -i -F -e "${url}" "${T}/build_files/build.sh"; then
         upstreams+=("${url}")
     else

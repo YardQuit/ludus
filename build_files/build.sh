@@ -38,33 +38,54 @@ chmod -R +x /etc/cron.daily 2>/dev/null || true
 
 
 #############################################################################
-## 1a. Donkey - modal editing for Emacs
+## 1a. Donkey, Ao and Garamond - Emacs packages, fetched at build time
 #############################################################################
 ##
-## donkey.el is not packaged in any repo, so fetch it at build time and seed
-## it through /etc/skel, next to the init.el/config.el that section 1 just
-## copied there. Its README wants it at donkey/donkey.el inside the user's
-## Emacs directory; config.el loads it from there and enables donkey-mode.
+## None of these is packaged in any repo, so fetch them at build time and
+## seed them through /etc/skel, next to the init.el/config.el that section 1
+## just copied there. Each gets its own directory inside the user's Emacs
+## directory - donkey/donkey.el, ao/ao-theme.el (with the ao-dark-theme.el
+## and ao-light-theme.el variants beside it) and garamond/garamond.el. Only
+## the source is shipped: config.el byte-compiles each file on the first
+## Emacs start and loads the compiled copy from then on, the way every one
+## of their READMEs installs from a clone.
 ##
-## The fetch is pinned to a commit and checked against a hash: this file is
-## executable elisp that ends up in every account on every machine running
-## the image, and a moved tag or a compromised branch would otherwise walk
-## straight in. The cost is that donkey no longer updates by itself - to
-## move to a newer donkey, look up the commit you want (ls-remote answers
-## for a branch or a tag), hash it, and put both values below:
+## Every fetch is pinned to a commit and checked against a hash: these
+## files are executable elisp that ends up in every account on every
+## machine running the image, and a moved tag or a compromised branch would
+## otherwise walk straight in. The cost is that nothing updates by itself -
+## to move to a newer release, look up the commit you want (ls-remote
+## answers for a branch or a tag), hash every file of that package at that
+## commit, and put the values below. For Donkey:
 ##
 ##   COMMIT=$(git ls-remote https://github.com/YardQuit/donkey master | awk '{print $1}')
 ##   echo $COMMIT; curl -fsSL https://raw.githubusercontent.com/YardQuit/donkey/$COMMIT/donkey.el | sha256sum
 
-DONKEY_COMMIT="20a73688b6c53413ff888ec4e2520633d7841d78"   # 1.7.2
-DONKEY_SHA256="17919b65dd154ca3cdc0473b6f998dc557ed893976cde6e883fa73f50dc99cc8"
+DONKEY_COMMIT="9f172d436ccc352a7240c79f66eec93d6b9a9b31"     # 1.15.0
+DONKEY_SHA256="1305fd0b1e7daf9a2180b7d4686546a2b57359c4fd4405ba1ac855686b3d99c1"
 
+## Ao has no release tags yet, so it is pinned to a commit on master; the
+## comment says when that commit was current.
+
+AO_COMMIT="cd76290a6ebb7336d136d348d298a9b793cf4e3b"         # master, 2026-09-20
+AO_THEME_SHA256="053f50ea5e806139611dc8b76db29f456c5ec20b0af320e969d9d9b1f50657cc"
+AO_DARK_SHA256="d8c3d03344e98701111f64db0ed5e9fb564ea799cf2f0813f39d0751a0f5928d"
+AO_LIGHT_SHA256="37596b822ba07964c1c1f97c002ed83d72f268a42bdd88adb32ebee749007d28"
+
+##   COMMIT=$(git ls-remote https://github.com/YardQuit/garamond master | awk '{print $1}')
+##   echo $COMMIT; curl -fsSL https://raw.githubusercontent.com/YardQuit/garamond/$COMMIT/garamond.el | sha256sum
+
+GARAMOND_COMMIT="c02250684306c1cc22ebd1dbb9d2878213864a57"   # 1.0.1
+GARAMOND_SHA256="49780832d6eab4322ce195628c7c92d098e9914daa0a07d1110c399b9ebf7e15"
+
+## Fetch one pinned file into /etc/skel/.config/emacs/<repo>/.
+##
 ## The directory is created explicitly: curl's --create-dirs would make it
 ## 0750, and /etc/skel content must be world-readable or copying it by hand
 ## into an existing account fails (section 1's sysfiles copy ships 0755).
-
-install -d -m 0755 /etc/skel/.config/emacs/donkey
-
+## curl creates the file with the build's umask - pin its mode the same way,
+## or a hardened builder (umask 027) ships files other users cannot read.
+##
 ## --retry absorbs the transient registry blip that would otherwise abort a
 ## scheduled CI build; a genuine failure still stops the build once the
 ## retries are spent, and a checksum mismatch stops it right here.
@@ -76,18 +97,25 @@ install -d -m 0755 /etc/skel/.config/emacs/donkey
 ## bound plus one attempt. Without it a server dribbling just fast enough to
 ## dodge the speed check could hold the build for every retry's full
 ## max-time in a row.
+##
+## The owner/repo is spelled out at every call rather than inside the
+## function: scripts/set-image-name.sh recognises these upstream URLs by
+## that literal and leaves the lines alone when the image owner is renamed.
+skel_fetch() {  # $1: owner/repo on GitHub, $2: commit, $3: file, $4: sha256
+    local dir="/etc/skel/.config/emacs/${1#*/}"
+    install -d -m 0755 "${dir}"
+    curl -fL --retry 3 --retry-all-errors --connect-timeout 15 \
+        --speed-limit 1 --speed-time 30 --max-time 120 --retry-max-time 300 \
+        -o "${dir}/$3" "https://raw.githubusercontent.com/$1/$2/$3"
+    chmod 0644 "${dir}/$3"
+    echo "$4  ${dir}/$3" | sha256sum -c -
+}
 
-curl -fL --retry 3 --retry-all-errors --connect-timeout 15 \
-    --speed-limit 1 --speed-time 30 --max-time 120 --retry-max-time 300 \
-    -o /etc/skel/.config/emacs/donkey/donkey.el \
-    "https://raw.githubusercontent.com/YardQuit/donkey/${DONKEY_COMMIT}/donkey.el"
-
-## curl creates the file with the build's umask - pin the mode the same way
-## install -d pinned the directory's, or a hardened builder (umask 027) ships
-## a donkey.el other users cannot read.
-
-chmod 0644 /etc/skel/.config/emacs/donkey/donkey.el
-echo "${DONKEY_SHA256}  /etc/skel/.config/emacs/donkey/donkey.el" | sha256sum -c -
+skel_fetch YardQuit/donkey   "${DONKEY_COMMIT}"   donkey.el         "${DONKEY_SHA256}"
+skel_fetch YardQuit/ao       "${AO_COMMIT}"       ao-theme.el       "${AO_THEME_SHA256}"
+skel_fetch YardQuit/ao       "${AO_COMMIT}"       ao-dark-theme.el  "${AO_DARK_SHA256}"
+skel_fetch YardQuit/ao       "${AO_COMMIT}"       ao-light-theme.el "${AO_LIGHT_SHA256}"
+skel_fetch YardQuit/garamond "${GARAMOND_COMMIT}" garamond.el       "${GARAMOND_SHA256}"
 
 
 #############################################################################
