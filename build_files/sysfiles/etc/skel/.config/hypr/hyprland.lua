@@ -30,6 +30,12 @@ local ao = {
 ---- MONITORS ----
 ------------------
 
+-- "preferred" is whatever the screen says it likes best. In a virtual machine
+-- that is the size virtio-gpu was given, and it does not follow the window you
+-- are watching it in: resizing a GNOME Boxes or virt-manager window resizes a
+-- GNOME guest through an agent this session has no equivalent for. Name the
+-- mode instead - mode = "1920x1080@60" below - or, for the session you are in,
+-- hyprctl keyword monitor ,1920x1080@60,auto,1
 hl.monitor({
     output   = "",
     mode     = "preferred",
@@ -130,6 +136,10 @@ hl.config({
     -- keyboard focus moves to.
     cursor = {
         no_warps = false,
+
+        -- If the pointer is invisible in a virtual machine, add
+        -- no_hardware_cursors = 1 here: virtio-gpu's cursor plane is one of
+        -- the ones that does not draw.
     },
 
     misc = {

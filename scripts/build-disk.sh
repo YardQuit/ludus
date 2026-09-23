@@ -9,6 +9,12 @@
 #   ./scripts/build-disk.sh iso ludus v2     # a specific image and tag
 #   ./scripts/build-disk.sh --check qcow2      # check the config, build nothing
 #
+# A qcow2 is the form GNOME Boxes and virt-manager want, and it lands in
+# output/qcow2/disk.qcow2: Boxes takes it through "+" -> "Install from file",
+# virt-manager through "Import existing disk image". Give the machine UEFI
+# firmware and turn its 3D acceleration on - build_files/build.sh section 9d
+# says why, and what a machine without either does instead.
+#
 # The tag picks which local image goes onto the ISO. What the installed machine
 # upgrades from afterwards is set by the kickstart in disk_config/iso.toml, and
 # that names the published image at :latest whatever is built here - which is

@@ -1543,6 +1543,133 @@ if rules[0].get("keyPath") != key or not os.path.exists(key):
 
 
 #############################################################################
+## 9d. Running in a virtual machine
+#############################################################################
+##
+## A Wayland compositor needs a GPU to render on, and in a virtual machine
+## that GPU is virtio-gpu - whose 3D half is the hypervisor's decision rather
+## than this image's. QEMU's plain virtio-gpu is a 2D device: OpenGL only
+## reaches the guest when virglrenderer runs on the host as well. That is what
+## "3D Acceleration" means in GNOME Boxes, and what
+## <model type='virtio'><acceleration accel3d='yes'/> means in a libvirt
+## domain. Boxes ships that switch off - it is per machine, in the machine's
+## own Preferences - so a VM created there and left alone hands Hyprland a
+## card it cannot get GL from.
+##
+## The host half is therefore two settings, written down here because no image
+## can apply them to the machine it is running on:
+##
+##   GNOME Boxes    the machine's Preferences -> 3D Acceleration
+##   virt-manager   Video -> Model: Virtio with 3D acceleration, and Display
+##                  Spice with OpenGL on - libvirt wants both before it writes
+##                  accel3d='yes'
+##   either one     UEFI firmware rather than BIOS. Not a preference: a bootc
+##                  image installs an EFI bootloader and a BIOS machine has
+##                  nowhere to look for it.
+##
+## The guest half is this section, and most of it is already true:
+##
+##   virtio disk, PCI and console
+##       built into Fedora's kernel - CONFIG_VIRTIO_BLK=y, CONFIG_VIRTIO_PCI=y,
+##       CONFIG_VIRTIO_CONSOLE=y - so the root filesystem is found with no
+##       initramfs work at all, and there is nothing here to get wrong.
+##
+##   virtio-gpu's DRM driver
+##       a module rather than built in, and dracut takes it along with every
+##       other DRM driver when section 9b rebuilds the initramfs for plymouth:
+##       virtio-gpu.ko is in the result. That is what draws the splash screen,
+##       before the real root is up and long before Hyprland starts.
+##
+##   Mesa's virgl and software drivers
+##       /usr/lib64/dri/virtio_gpu_dri.so for a host offering 3D, and
+##       kms_swrast_dri.so - llvmpipe, the whole compositor on the CPU - for
+##       one that is not. Both come from mesa-dri-drivers, which arrives by
+##       itself as a dependency of the mesa-libEGL that Hyprland links
+##       against. "Arrives by itself" is not the same as "is here", so the
+##       package is installed by name below and the two files are checked for
+##       after.
+##
+## What a plain image really is missing is the guest agent, so that is what
+## this section adds.
+
+pkg_install qemu-guest-agent mesa-dri-drivers
+
+## The agent is the channel the host asks the machine to do things on: "shut
+## down" in Boxes becomes a clean shutdown rather than the power going off, a
+## snapshot can freeze the filesystems first, and the guest's addresses show
+## up on the host side. It talks over a virtio serial port, and its [Install]
+## section says exactly that - WantedBy the device unit for that port - so
+## enabling it here binds it to hardware that exists only inside a QEMU
+## machine. On bare metal the unit is installed, wanted by nothing, and never
+## starts. There is no condition to write and nothing to detect.
+
+systemctl enable qemu-guest-agent.service
+
+## The DRI drivers a virtual machine renders through. Both belong to
+## mesa-dri-drivers today; a Mesa that moved them into a subpackage would cost
+## every VM its desktop and the build would stay green while doing it, which
+## is the failure mode this file keeps refusing to ship. Check both, and check
+## them by file rather than by package name, because the package could keep
+## its name and lose the contents.
+
+for dri in virtio_gpu_dri.so kms_swrast_dri.so; do
+    if ! find /usr/lib64/dri /usr/lib/dri -name "${dri}" -print -quit 2>/dev/null | grep -q .; then
+        echo "ERROR: ${dri} is not in this image." >&2
+        echo >&2
+        echo "It comes from mesa-dri-drivers, which this section installs by" >&2
+        echo "name. Check /usr/share/image-build/skipped-packages first, then" >&2
+        echo "whether Mesa has moved its DRI drivers elsewhere - a Wayland" >&2
+        echo "session in a virtual machine has nothing else to render with." >&2
+        exit 1
+    fi
+done
+
+## Three things this section deliberately does not do.
+##
+## It does not force software rendering. Hyprland has no switch for it:
+## WLR_RENDERER_ALLOW_SOFTWARE is a wlroots variable and Hyprland has not been
+## wlroots for some time - grep its renderer and aquamarine's DRM backend and
+## there is nothing to find, the only environment variable the latter reads
+## being AQ_DRM_DEVICES. So what happens is Mesa's decision, taken from the
+## device it is given. Where the host cannot offer 3D at all and the session
+## will not start, force llvmpipe on the machine rather than in a rebuild -
+## Ctrl+Alt+F3 gets you a text console to type it at:
+##
+##   echo LIBGL_ALWAYS_SOFTWARE=1 | sudo tee -a /etc/environment
+##   sudo systemctl reboot
+##
+## One file covers both halves of the desktop: pam_env reads /etc/environment
+## for the login screen's session, and the systemd user manager reads it again
+## for the session uwsm starts - environment.d(5) lists it among the files it
+## parses. Delete the line to go back. Expect a desktop that works and
+## animations that do not.
+##
+## It does not install spice-vdagent, the guest half of SPICE's shared
+## clipboard, display resizing and drag-and-drop file transfer. Its own --help
+## calls it "Spice session guest agent: X11", and that is the whole story:
+## there is no wlroots or Hyprland support in it, so in this session it has
+## nothing to attach to. (Its daemon half could not be switched on in the
+## usual way either - spice-vdagentd.service ships no [Install] section at all
+## and is started by a udev rule when the SPICE port appears.) So a shared
+## clipboard with the host is not on offer here, and ssh is how things move in
+## and out.
+##
+## And it does not install mesa-vulkan-drivers - venus for an accelerated
+## host, lavapipe for a CPU one. That is about 170 MB installed, and nothing
+## in this image renders through Vulkan: Hyprland, waybar, kitty and the
+## greeter are GLES. Add it to rpm_packages if you run Vulkan applications in
+## the guest.
+##
+## One thing to expect that no package fixes: the display stays the size
+## virtio-gpu was given. Resizing the Boxes or virt-manager window resizes a
+## GNOME guest because an agent inside it tells the session to, and this
+## session has no equivalent - so set the mode you want in
+## ~/.config/hypr/hyprland.lua, or for the session you are in:
+##
+##   hyprctl keyword monitor ,1920x1080@60,auto,1
+
+
+#############################################################################
 ## 10. Directories that must exist at boot
 #############################################################################
 ##
